@@ -30,8 +30,8 @@ namespace Client
                     Print("1. Initiate battle (client).");
                     Print("2. Invite challengers (server).");
                     Print("3. Exit.");
-                    input = Console.ReadKey().KeyChar;
-                    Console.Clear();
+
+                    input = GetInput(singleKey: true, intercept: true)[0];
 
                     switch (input)
                     {
@@ -39,7 +39,6 @@ namespace Client
                         // attempts to connect
                         case '1':
                             {
-                                PrintGameHeader(myIP, true);
                                 listener.Start();
 
                                 theirIP = GetInput("Enter in the IP (v6) of your opponent:");
@@ -50,7 +49,10 @@ namespace Client
                                 message = listener.ListenForMessage();
                                 if (message == Message.SERVER_CONNECT)
                                 {
-                                    Print("Success");
+                                    Print("Opponent found.");
+
+                                    string key = GetInput("Choose a letter key on your keyboard:", true);
+                                    SendString(theirIP, theirPort, key);
                                 }
                             }
                             
@@ -60,7 +62,6 @@ namespace Client
                         // waits for a connection
                         case '2':
                             {
-                                PrintGameHeader(myIP, true);
                                 listener.Start();
 
                                 Print("Waiting for challengers...");
@@ -68,9 +69,11 @@ namespace Client
                                 
                                 if (message == Message.CLIENT_CONNECT)
                                 {
-                                    Print("Success!");
+                                    Print("Challenger found.");
 
                                     SendMessage(theirIP, theirPort, Message.SERVER_CONNECT);
+
+                                    string response = listener.ListenForString();
                                 }
                             }
                             
