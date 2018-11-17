@@ -23,6 +23,12 @@ namespace Client
             TcpListener listener = new TcpListener(IPAddress.Parse(myIP), port);
 
             // Game-specific
+            char[] letters = new char[26] {
+                'a', 'b', 'c', 'd', 'e', 'f', 'g',
+                'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                'o', 'p', 'q', 'r', 's', 't', 'u',
+                'v', 'w', 'x', 'y', 'z'
+            };
             char[] response = new char[0];
             char key;            
             int turn = 1;
@@ -63,7 +69,7 @@ namespace Client
                                     Console.Clear();
                                     Print("New game begins! Good luck!");
 
-                                    while (points < 3 || theirPoints < 3)
+                                    while (points < 3 && theirPoints < 3)
                                     {
                                         Print($"Turn: {turn}");
                                         Print($"Your score: {points}");
@@ -73,7 +79,6 @@ namespace Client
                                         // Show previous points scored here
                                         if (response.Length == 1 && response[0] == '1')
                                         {
-                                            points++;
                                             Print("You guessed correctly, you got 1 point!");
                                         }
                                         else if (response.Length == 1 && response[0] == '0')
@@ -83,6 +88,13 @@ namespace Client
 
                                         // Pick a character
                                         key = GetInput("Choose a letter key on your keyboard:", true, true)[0];
+
+                                        // Check if our choice is valid
+                                        while (!letters.Exists(key))
+                                        {
+                                            Print($"'{key}' is not a valid letter, please choose a letter.");
+                                            key = GetInput(singleKey: true, intercept: true)[0];
+                                        }
                                         Print($"You chose '{key}'.");
                                         SendCharArray(theirIP, theirPort, CompileChoices(key));
                                         Print("Waiting for opponent to guess...");
@@ -104,11 +116,22 @@ namespace Client
                                         // Wait for opponent's choice
                                         response = listener.ListenForCharArray();
                                         input = GetInput($"Choose one of these characters: [{string.Join(',', response)}]", true, true)[0];
+
+                                        // Check if the choice is valid
+                                        while (!response.Exists(input))
+                                        {
+                                            Print($"'{input}' is not a valid character, please choose one of these characters: [{string.Join(',', response)}]");
+                                            input = GetInput(singleKey: true, intercept: true)[0];
+                                        }
                                         Print($"You chose '{input}'.");
                                         SendCharArray(theirIP, theirPort, new char[1] { input });
 
                                         // Receive points?
                                         response = listener.ListenForCharArray();
+                                        if (response.Length == 1 && response[0] == '1')
+                                        {
+                                            points++;
+                                        }
 
                                         Console.Clear();
                                         turn++;
@@ -134,6 +157,8 @@ namespace Client
                                         Print("You tied.");
                                         GetInput("(Press any key to continue)", true, true);
                                     }
+
+                                    Console.Clear();
                                 }
                             }
                             
@@ -160,17 +185,24 @@ namespace Client
 
                                     SendMessage(theirIP, theirPort, Message.SERVER_CONNECT);
 
-                                    while (points < 3 || theirPoints < 3)
+                                    while (points < 3 && theirPoints < 3)
                                     {
                                         Print($"Turn: {turn}");
                                         Print($"Your score: {points}");
                                         Print($"Their score: {theirPoints}");
                                         Print("");
-                                        Print("Opponent is going first...");                                        
+                                        Print("Opponent's turn...");                                        
 
                                         // Guess opponent's character
                                         response = listener.ListenForCharArray();
                                         input = GetInput($"Choose one of these characters: [{string.Join(',', response)}]", true, true)[0];
+
+                                        // Check if the choice is valid
+                                        while (!response.Exists(input))
+                                        {
+                                            Print($"'{input}' is not a valid character, please choose one of these characters: [{string.Join(',', response)}]");
+                                            input = GetInput(singleKey: true, intercept: true)[0];
+                                        }
                                         Print($"You chose '{input}'.");
                                         SendCharArray(theirIP, theirPort, new char[1] { input });
 
@@ -188,6 +220,13 @@ namespace Client
 
                                         // Pick a character
                                         key = GetInput("Choose a letter key on your keyboard:", true, true)[0];
+
+                                        // Check if our choice is valid
+                                        while (!letters.Exists(key))
+                                        {
+                                            Print($"'{key}' is not a valid letter, please choose a letter.");
+                                            key = GetInput(singleKey: true, intercept: true)[0];
+                                        }
                                         Print($"You chose '{key}'.");
                                         SendCharArray(theirIP, theirPort, CompileChoices(key));
                                         Print("Waiting for opponent to guess...");
@@ -216,7 +255,7 @@ namespace Client
                                     if (points > theirPoints)
                                     {
                                         Print("You won!");
-                                        GetInput("(Press any key to continue)", true, true);
+                                        GetInput("(Press any key to continue)", true, true);                                        
                                     }
                                     else if (theirPoints > points)
                                     {
@@ -228,6 +267,8 @@ namespace Client
                                         Print("You tied.");
                                         GetInput("(Press any key to continue)", true, true);
                                     }
+
+                                    Console.Clear();
                                 }
                             }
                             
@@ -252,9 +293,6 @@ namespace Client
             {
                 listener.Stop();
             }
-
-            Print("done");
-            Console.ReadKey();
         }
     }
 }

@@ -18,15 +18,14 @@ namespace Extras
             Message retVal;
             bool success = false;
 
-            TcpClient client = _.AcceptTcpClient();
-            NetworkStream ns = client.GetStream();
+            using (TcpClient client = _.AcceptTcpClient())
+            using (NetworkStream ns = client.GetStream())
+            {
+                byte[] response = new byte[1024];
+                int bytesRead = ns.Read(response, 0, response.Length);
 
-            byte[] response = new byte[1024];
-            int bytesRead = ns.Read(response, 0, response.Length);
-
-            success = Enum.TryParse<Message>(Encoding.ASCII.GetString(response, 0, bytesRead), out retVal);
-
-            client.Close();
+                success = Enum.TryParse<Message>(Encoding.ASCII.GetString(response, 0, bytesRead), out retVal);
+            }
 
             if (success)
                 return retVal;
@@ -38,15 +37,14 @@ namespace Extras
         {
             char[] retVal = new char[0];
 
-            TcpClient client = _.AcceptTcpClient();
-            NetworkStream ns = client.GetStream();
+            using (TcpClient client = _.AcceptTcpClient())
+            using (NetworkStream ns = client.GetStream())
+            {
+                byte[] response = new byte[1024];
+                int bytesRead = ns.Read(response, 0, response.Length);
 
-            byte[] response = new byte[1024];
-            int bytesRead = ns.Read(response, 0, response.Length);
-
-            retVal = Encoding.ASCII.GetString(response, 0, bytesRead).ToCharArray();
-
-            client.Close();
+                retVal = Encoding.ASCII.GetString(response, 0, bytesRead).ToCharArray();
+            }
 
             return retVal;
         }
@@ -56,24 +54,22 @@ namespace Extras
     {
         public static void SendMessage(string IP, int port, Message message)
         {
-            TcpClient client = new TcpClient(IP, port);
-            NetworkStream ns = client.GetStream();
-
-            byte[] byteMessage = Encoding.ASCII.GetBytes(message.ToString());
-            ns.Write(byteMessage, 0, byteMessage.Length);
-
-            client.Close();
+            using (TcpClient client = new TcpClient(IP, port))
+            using (NetworkStream ns = client.GetStream())
+            {
+                byte[] byteMessage = Encoding.ASCII.GetBytes(message.ToString());
+                ns.Write(byteMessage, 0, byteMessage.Length);
+            }
         }
 
         public static void SendCharArray(string IP, int port, char[] charArray)
         {
-            TcpClient client = new TcpClient(IP, port);
-            NetworkStream ns = client.GetStream();
-
-            byte[] byteMessage = Encoding.ASCII.GetBytes(charArray);
-            ns.Write(byteMessage, 0, byteMessage.Length);
-
-            client.Close();
+            using (TcpClient client = new TcpClient(IP, port))
+            using (NetworkStream ns = client.GetStream())
+            {
+                byte[] byteMessage = Encoding.ASCII.GetBytes(charArray);
+                ns.Write(byteMessage, 0, byteMessage.Length);
+            }
         }
     }
 
@@ -89,7 +85,7 @@ namespace Extras
             {
                 if ((i == 0 && ((int)myChoice < 96 || (int)myChoice > 122))
                     || i > 0)
-                {                    
+                {
                     while (retVal.Exists(temp))
                     {
                         temp = (char)random.Next(97, 123); // a-z
@@ -119,8 +115,8 @@ namespace Extras
                 array[n] = value;
             }
         }
-        
-        private static bool Exists(this char[] array, char valueExists)
+
+        public static bool Exists(this char[] array, char valueExists)
         {
             for (int i = 0; i < array.Length; i++)
             {
