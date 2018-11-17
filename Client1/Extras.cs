@@ -18,14 +18,15 @@ namespace Extras
             Message retVal;
             bool success = false;
 
-            using (TcpClient client = _.AcceptTcpClient())
-            using (NetworkStream ns = client.GetStream())
-            {
-                byte[] response = new byte[1024];
-                int bytesRead = ns.Read(response, 0, response.Length);
+            TcpClient client = _.AcceptTcpClient();
+            NetworkStream ns = client.GetStream();
 
-                success = Enum.TryParse<Message>(Encoding.ASCII.GetString(response, 0, bytesRead), out retVal);
-            }
+            byte[] response = new byte[1024];
+            int bytesRead = ns.Read(response, 0, response.Length);
+
+            success = Enum.TryParse<Message>(Encoding.ASCII.GetString(response, 0, bytesRead), out retVal);
+
+            client.Close();
 
             if (success)
                 return retVal;
@@ -33,18 +34,19 @@ namespace Extras
                 return Message.FAILURE;
         }
 
-        public static string ListenForString(this TcpListener _)
+        public static char[] ListenForCharArray(this TcpListener _)
         {
-            string retVal = string.Empty;
+            char[] retVal = new char[0];
 
-            using (TcpClient client = _.AcceptTcpClient())
-            using (NetworkStream ns = client.GetStream())
-            {
-                byte[] response = new byte[1024];
-                int bytesRead = ns.Read(response, 0, response.Length);
+            TcpClient client = _.AcceptTcpClient();
+            NetworkStream ns = client.GetStream();
 
-                retVal = Encoding.ASCII.GetString(response, 0, bytesRead);
-            }
+            byte[] response = new byte[1024];
+            int bytesRead = ns.Read(response, 0, response.Length);
+
+            retVal = Encoding.ASCII.GetString(response, 0, bytesRead).ToCharArray();
+
+            client.Close();
 
             return retVal;
         }
@@ -54,40 +56,47 @@ namespace Extras
     {
         public static void SendMessage(string IP, int port, Message message)
         {
-            using (TcpClient client = new TcpClient(IP, port))
-            using (NetworkStream ns = client.GetStream())
-            {
-                byte[] byteMessage = Encoding.ASCII.GetBytes(message.ToString());
+            TcpClient client = new TcpClient(IP, port);
+            NetworkStream ns = client.GetStream();
 
-                ns.Write(byteMessage, 0, byteMessage.Length);
-            }
+            byte[] byteMessage = Encoding.ASCII.GetBytes(message.ToString());
+            ns.Write(byteMessage, 0, byteMessage.Length);
+
+            client.Close();
         }
 
-        public static void SendString(string IP, int port, string String)
+        public static void SendCharArray(string IP, int port, char[] charArray)
         {
-            using (TcpClient client = new TcpClient(IP, port))
-            using (NetworkStream ns = client.GetStream())
-            {
-                byte[] byteMessage = Encoding.ASCII.GetBytes(String);
+            TcpClient client = new TcpClient(IP, port);
+            NetworkStream ns = client.GetStream();
 
-                ns.Write(byteMessage, 0, byteMessage.Length);
-            }
+            byte[] byteMessage = Encoding.ASCII.GetBytes(charArray);
+            ns.Write(byteMessage, 0, byteMessage.Length);
+
+            client.Close();
         }
     }
 
     public static class GameHelpers
     {
-        public static char[] CompileDecision(char opponentsChoice)
+        public static char[] CompileChoices(char myChoice)
         {
             Random random = new Random();
-            char[] retVal = new char[5] { opponentsChoice, ' ', ' ', ' ', ' ' };
+            char[] retVal = new char[5] { myChoice, ' ', ' ', ' ', ' ' };
+            char temp = ' ';
 
             for (int i = 0; i < retVal.Length; i++)
             {
-                if ((i == 0 && ((int)opponentsChoice < 96 || (int)opponentsChoice > 122))
+                if ((i == 0 && ((int)myChoice < 96 || (int)myChoice > 122))
                     || i > 0)
-                {
-                    retVal[i] = (char)random.Next(97, 123); // a-z
+                {                    
+                    while (retVal.Exists(temp))
+                    {
+                        temp = (char)random.Next(97, 123); // a-z
+                    }
+
+                    retVal[i] = temp;
+                    temp = ' ';
                 }
             }
 
@@ -109,7 +118,18 @@ namespace Extras
                 array[k] = array[n];
                 array[n] = value;
             }
-        }    
+        }
+        
+        private static bool Exists(this char[] array, char valueExists)
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i] == valueExists)
+                    return true;
+            }
+
+            return false;
+        }
     }
 
     public static class GlobalHelpers
@@ -129,6 +149,24 @@ namespace Extras
             Print($"Your IP is: [{IP}]");
             Print("");
             Print("");
+        }
+
+        public static void PrintRules()
+        {
+            Console.Clear();
+
+            Print("Rules");
+            Print("-----");
+            Print("The game of Packet Battle is a game of wits and luck.");
+            Print("In this game, players take turns picking characters on their keyboard.");
+            Print("The opposing player must choose the character the opponent picked.");
+            Print("If the player chose the character the opponent picked, the player gets 1 point.");
+            Print("The first player to 3 points is the winner.");
+            Print("");
+            Print("(Type any key to return)");
+
+            GetInput(singleKey: true, intercept: true);
+            Console.Clear();
         }
 
         public static string GetInput(string prompt = null,
