@@ -40,6 +40,10 @@ namespace Client
             {                
                 while (running)
                 {
+                    // Reset points
+                    points = 0;
+                    theirPoints = 0;
+
                     PrintGameHeader(myIP);
                     Print("Please select an option:");
                     Print("1. Initiate battle (client).");
